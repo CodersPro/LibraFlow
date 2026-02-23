@@ -2,10 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import api from "../api/axios";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../hooks/useToast";
+
+
 
 export default function AI() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const toast = useToast();
   const isLibrarian = user && user.role === "librarian";
   const [activeTab, setActiveTab] = useState("chat");
   const [messages, setMessages] = useState([
@@ -28,6 +32,42 @@ export default function AI() {
   const [loadingStats, setLoadingStats] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const STORAGE_KEY = `libraflow_ai_history_${user?._id}`;
+  const INITIAL_MESSAGE = {
+    role: "assistant",
+    text: "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
+  };
+
+  // Charger l'historique au démarrage
+  useEffect(() => {
+    if (user?._id) {
+      const savedMessages = localStorage.getItem(STORAGE_KEY);
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages);
+          if (parsed.length > 0) setMessages(parsed);
+        } catch (e) {
+          console.error("Erreur parsing history", e);
+        }
+      }
+      setIsLoaded(true);
+    }
+  }, [user?._id]);
+
+  // Sauvegarder dès que messages change, mais seulement APRES le chargement
+  useEffect(() => {
+    if (user?._id && isLoaded && messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages, user?._id, isLoaded]);
+
+  // Effacer la conversation
+  const clearHistory = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setMessages([INITIAL_MESSAGE]);
+  };
 
   useEffect(
     function () {
@@ -42,13 +82,20 @@ export default function AI() {
     if (!input.trim()) return;
     var userMsg = input.trim();
     setInput("");
+
+    // Envoyer tout l'historique propre (sans erreurs) — max 20 messages pour la mémoire
+    const historyContext = messages.filter((m) => !m.err).slice(-20);
+
     setMessages(function (prev) {
       return [...prev, { role: "user", text: userMsg }];
     });
     setLoadingChat(true);
 
     try {
-      const res = await api.post("/ai/chat", { message: userMsg });
+      const res = await api.post("/ai/chat", {
+        message: userMsg,
+        history: historyContext,
+      });
       setMessages(function (prev) {
         return [...prev, { role: "assistant", text: res.data.reply }];
       });
@@ -83,7 +130,7 @@ export default function AI() {
         Array.isArray(res.data.recommendations) ? res.data.recommendations : [],
       );
     } catch (err) {
-      alert("Erreur IA : " + (err.response?.data?.message || err.message));
+      toast.error("Erreur IA : " + (err.response?.data?.message || err.message));
     } finally {
       setLoadingRec(false);
     }
@@ -91,7 +138,7 @@ export default function AI() {
 
   const getSummary = async function () {
     if (!bookId) {
-      alert("Entre un ID de livre");
+      toast.warning("Entre un ID de livre");
       return;
     }
     setLoadingSum(true);
@@ -99,7 +146,7 @@ export default function AI() {
       const res = await api.post("/ai/summarize", { bookId: bookId });
       setSummary(res.data.summary);
     } catch (err) {
-      alert("Erreur : " + (err.response?.data?.message || err.message));
+      toast.error("Erreur : " + (err.response?.data?.message || err.message));
     } finally {
       setLoadingSum(false);
     }
@@ -111,7 +158,7 @@ export default function AI() {
       const res = await api.get("/ai/stats-summary");
       setStatsSummary(res.data.summary);
     } catch (err) {
-      alert("Erreur : " + (err.response?.data?.message || err.message));
+      toast.error("Erreur : " + (err.response?.data?.message || err.message));
     } finally {
       setLoadingStats(false);
     }
@@ -167,16 +214,27 @@ export default function AI() {
           {/* Chat Header */}
           <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
-              <span className="text-white font-bold">B</span>
+              <span className="text-white font-bold">L</span>
             </div>
             <div>
-              <h3 className="text-slate-900 font-semibold">{t("geminiAI")}</h3>
-              <p className="text-xs text-slate-500">BookAI Pro</p>
+              <h3 className="text-slate-900 font-semibold">LibraFlow AI</h3>
+              <p className="text-xs text-slate-500">
+                Propulsé par Groq · llama-3.3-70b
+              </p>
             </div>
-            <span className="ml-auto flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Online
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={clearHistory}
+                title="Effacer la conversation"
+                className="text-xs text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 px-2.5 py-1 rounded-full transition-colors"
+              >
+                🗑️ Effacer
+              </button>
+              <span className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Online
+              </span>
+            </div>
           </div>
 
           {/* Messages */}

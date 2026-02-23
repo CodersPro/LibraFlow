@@ -3,10 +3,10 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const navItems = [
-  { to: "/", icon: "◈", labelKey: "dashboardNav" },
-  { to: "/catalogue", icon: "📚", labelKey: "catalogue" },
-  { to: "/loans", icon: "↩", labelKey: "loans" },
-  { to: "/ai", icon: "✦", labelKey: "ai" },
+  { to: "/app/dashboard", icon: "◈", labelKey: "dashboardNav" },
+  { to: "/app/catalogue", icon: "📚", labelKey: "catalogue" },
+  { to: "/app/loans", icon: "↩", labelKey: "loans" },
+  { to: "/app/ai", icon: "✦", labelKey: "ai" },
 ];
 
 export default function Layout() {
