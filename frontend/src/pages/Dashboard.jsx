@@ -43,7 +43,7 @@ export default function Dashboard() {
     );
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
         <p className="text-xs font-mono text-stone-400 uppercase tracking-widest mb-1">
           {t("overview")}
@@ -54,7 +54,7 @@ export default function Dashboard() {
       </div>
       {stats ? (
         <>
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
               label={t("totalBooks")}
               value={stats.totalBooks}
@@ -80,7 +80,7 @@ export default function Dashboard() {
               icon="⚠"
             />
           </div>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white border border-amber-100 rounded-xl overflow-hidden">
               <div className="px-6 py-4 border-b border-amber-50">
                 <h3 className="font-serif text-lg font-bold">

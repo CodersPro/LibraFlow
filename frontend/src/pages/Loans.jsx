@@ -72,7 +72,7 @@ export default function Loans() {
   const statusLabel = function (status) {
     if (status === "returned") return t("returned");
     if (status === "late") return t("late");
-    if (status === "pending") return "En attente";
+    if (status === "pending") return t("pending") || "En attente";
     return t("active");
   };
 
@@ -94,7 +94,7 @@ export default function Loans() {
               className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all shadow-sm"
             >
               <span>📷</span>
-              Scanner QR
+              {t("scanQR")}
             </button>
 
             <button
@@ -127,7 +127,7 @@ export default function Loans() {
           <h3 className="text-lg font-semibold text-slate-900 mb-4">
             {t("newLoan")}
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                 {t("student")}
@@ -139,7 +139,7 @@ export default function Loans() {
                   onChange={function (e) { setForm({ ...form, userId: e.target.value }); }}
                   className="input"
                 >
-                  <option value="">Sélectionner un étudiant</option>
+                  <option value="">{t("selectStudent")}</option>
                   {users.map(function (u) {
                     return (
                       <option key={u._id} value={u._id}>
@@ -151,7 +151,7 @@ export default function Loans() {
               ) : (
                 <input
                   required
-                  placeholder="ID MongoDB de l'étudiant"
+                  placeholder={t("selectUser")}
                   value={form.userId}
                   onChange={function (e) { setForm({ ...form, userId: e.target.value }); }}
                   className="input font-mono"
@@ -189,7 +189,7 @@ export default function Loans() {
       )}
 
       {/* Tableau des emprunts */}
-      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
@@ -198,7 +198,7 @@ export default function Loans() {
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("dueDate")}</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("status")}</th>
               {user && user.role === "librarian" && (
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">{t("action")}</th>
               )}
             </tr>
           </thead>
@@ -248,7 +248,7 @@ export default function Loans() {
                             onClick={function () { setShowScanner(true); }}
                             className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors font-medium"
                           >
-                            📷 Scanner pour confirmer
+                            📷 {t("confirmScan")}
                           </button>
                         )}
                         {(loan.status === "active" || loan.status === "late") && (
@@ -259,7 +259,7 @@ export default function Loans() {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                            📷 Scanner pour retour
+                            📷 {t("returnScan")}
                           </button>
                         )}
                         {loan.status === "returned" && (

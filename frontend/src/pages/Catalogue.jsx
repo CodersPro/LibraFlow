@@ -106,13 +106,13 @@ export default function Catalogue() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Supprimer ce livre ?")) return;
+    if (!window.confirm(t("deleteConfirm"))) return;
     try {
       await api.delete("/books/" + id);
       fetchBooks();
-      toast.success("Livre supprimé avec succès");
+      toast.success(t("bookDeleteSuccess"));
     } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de la suppression");
+      toast.error(err.response?.data?.message || t("errorOccurred"));
     }
   };
 
@@ -166,15 +166,14 @@ export default function Catalogue() {
         )}
       </div>
 
-      {/* Succès emprunt */}
       {borrowSuccess && (
         <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3 animate-slide-down">
           <span className="text-2xl">✅</span>
           <div className="flex-1">
-            <p className="font-semibold text-emerald-800">Demande créée !</p>
+            <p className="font-semibold text-emerald-800">{t("borrowSuccessTitle")}</p>
             <p className="text-sm text-emerald-600">
-              Bon d'emprunt pour <strong>{borrowSuccess.bookTitle}</strong>{" "}
-              téléchargé. Présentez-le au bibliothécaire.
+              {t("borrowSuccessDesc").split("<strong>")[0]} <strong>{borrowSuccess.bookTitle}</strong>{" "}
+              {t("borrowSuccessDesc").split("</strong>")[1]}
             </p>
           </div>
           <button
@@ -195,7 +194,7 @@ export default function Catalogue() {
           <h3 className="text-lg font-semibold text-slate-900 mb-4">
             {t("addBook")}
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               required
               placeholder={t("title")}
@@ -255,7 +254,7 @@ export default function Catalogue() {
       )}
 
       {/* Recherche & Filtre */}
-      <div className="flex gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex-1 relative">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -279,7 +278,7 @@ export default function Catalogue() {
         <select
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
-          className="input w-48"
+          className="input w-full sm:w-48"
         >
           <option value="">{t("allGenres")}</option>
           {GENRES.map((g) => (
@@ -288,11 +287,9 @@ export default function Catalogue() {
         </select>
       </div>
 
-      {/* Compteur */}
       {!loading && (
         <p className="text-xs text-slate-400 mb-5">
-          {books.length} livre{books.length !== 1 ? "s" : ""} trouvé
-          {books.length !== 1 ? "s" : ""}
+          {books.length} {t("book")}{books.length !== 1 ? "s" : ""} {t("found") || "trouvé"}{books.length !== 1 ? "s" : ""}
         </p>
       )}
 
@@ -367,11 +364,11 @@ export default function Catalogue() {
                   <div className="absolute top-2 right-2 z-20">
                     {isAvailable ? (
                       <span className="bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
-                        ✓ Dispo
+                        ✓ {t("availableStatus")}
                       </span>
                     ) : (
                       <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
-                        ✗ Emprunté
+                        ✗ {t("borrowedStatus")}
                       </span>
                     )}
                   </div>
@@ -397,7 +394,7 @@ export default function Catalogue() {
 
                   {/* Copies dispo */}
                   <div className="flex items-center justify-between text-xs mb-3 mt-auto">
-                    <span className="text-slate-400">Exemplaires</span>
+                    <span className="text-slate-400">{t("copiesLabel")}</span>
                     <span className="font-semibold">
                       <span
                         className={
@@ -444,12 +441,12 @@ export default function Catalogue() {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             />
                           </svg>
-                          Génération...
+                          {t("borrowing")}
                         </span>
                       ) : isAvailable ? (
-                        "📥 Emprunter"
+                        t("borrow")
                       ) : (
-                        "Indisponible"
+                        t("unavailable")
                       )}
                     </button>
                   )}

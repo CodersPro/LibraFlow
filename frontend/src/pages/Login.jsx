@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import LanguageToggle from "../components/LanguageToggle";
 import api from "../api/axios";
 
 export default function Login() {
@@ -34,23 +35,19 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 bg-dots">
       {/* Language Toggle - Top Right */}
-      <button
-        onClick={toggleLang}
-        className="fixed top-6 right-6 flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-card text-sm font-medium text-slate-600 hover:shadow-hover transition-shadow"
-      >
-        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-base">
-          {lang === "fr" ? "🇫🇷" : "🇬🇧"}
-        </span>
-        <span>{lang === "fr" ? "Français" : "English"}</span>
-      </button>
+      <div className="fixed top-6 right-6">
+        <LanguageToggle />
+      </div>
 
       {/* Login Card */}
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl">L</span>
-          </div>
+          <Link to="/" className="inline-block">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg transform hover:scale-105 transition-transform">
+              <span className="text-white font-bold text-2xl">L</span>
+            </div>
+          </Link>
           <h1 className="text-2xl font-bold text-slate-900">LibraFlow</h1>
           <p className="text-slate-500 text-sm mt-1">
             {t("intelligentSystem")}
@@ -128,6 +125,16 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* Switch to Register */}
+          <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+            <p className="text-sm text-slate-500">
+              {t("noAccount")} {" "}
+              <Link to="/register" className="text-sky-600 font-bold hover:text-sky-700 transition-colors">
+                {t("register")}
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}

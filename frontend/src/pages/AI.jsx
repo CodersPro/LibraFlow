@@ -15,7 +15,7 @@ export default function AI() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Bonjour ! Je suis votre assistant bibliothecaire propulse par BookAI. Vous pouvez me poser des questions sur des livres, demander des recommandations, ou discuter de litterature !",
+      text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
     },
   ]);
   const [input, setInput] = useState("");
@@ -37,7 +37,7 @@ export default function AI() {
   const STORAGE_KEY = `libraflow_ai_history_${user?._id}`;
   const INITIAL_MESSAGE = {
     role: "assistant",
-    text: "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
+    text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
   };
 
   // Charger l'historique au démarrage
@@ -183,7 +183,7 @@ export default function AI() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-full sm:w-fit overflow-x-auto whitespace-nowrap scrollbar-hide">
         {tabs.map(function (tab) {
           return (
             <button
@@ -208,8 +208,7 @@ export default function AI() {
       {/* ── CHAT ── */}
       {activeTab === "chat" && (
         <div
-          className="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden flex flex-col"
-          style={{ height: "560px" }}
+          className="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden flex flex-col h-[500px] md:h-[560px]"
         >
           {/* Chat Header */}
           <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
@@ -225,14 +224,14 @@ export default function AI() {
             <div className="ml-auto flex items-center gap-2">
               <button
                 onClick={clearHistory}
-                title="Effacer la conversation"
+                title={t("clearHistory")}
                 className="text-xs text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 px-2.5 py-1 rounded-full transition-colors"
               >
-                🗑️ Effacer
+                🗑️ {t("clear")}
               </button>
               <span className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Online
+                {t("online")}
               </span>
             </div>
           </div>

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import LanguageToggle from "./LanguageToggle";
 
 const navItems = [
   { to: "/app/dashboard", icon: "◈", labelKey: "dashboardNav" },
@@ -13,6 +15,7 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { t, lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -21,7 +24,39 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-slate-50 md:flex">
-      <aside className="w-full border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 font-bold text-white">
+            L
+          </div>
+          <span className="font-bold text-slate-900">LibraFlow</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col p-4">
           <div className="mb-6 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600">
@@ -32,7 +67,7 @@ export default function Layout() {
                 LibraFlow
               </h1>
               <p className="text-xs uppercase tracking-wider text-slate-500">
-                Smart Library
+                {t("intelligentSystem")}
               </p>
             </div>
           </div>
@@ -43,6 +78,7 @@ export default function Layout() {
                 key={to}
                 to={to}
                 end={to === "/"}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   "nav-link " + (isActive ? "nav-link-active" : "")
                 }
@@ -68,20 +104,10 @@ export default function Layout() {
               </div>
             </div>
 
-            <button
-              onClick={toggleLang}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
-              title={
-                lang === "fr" ? "Switch to English" : "Changer en français"
-              }
-            >
-              <span className="inline-flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-xs">
-                  {lang === "fr" ? "🇫🇷" : "🇬🇧"}
-                </span>
-                <span className="uppercase text-xs">{lang}</span>
-              </span>
-            </button>
+            <div className="flex w-full items-center justify-between px-3 py-2">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("role")}</span>
+              <LanguageToggle />
+            </div>
 
             <button
               onClick={handleLogout}

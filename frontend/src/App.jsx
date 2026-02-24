@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Catalogue from "./pages/Catalogue";
 import Loans from "./pages/Loans";
 import AI from "./pages/AI";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -21,8 +23,10 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public Route */}
+              {/* Public Routes */}
               <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
               {/* Private Routes Wrapper */}
               <Route
