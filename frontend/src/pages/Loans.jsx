@@ -18,26 +18,29 @@ export default function Loans() {
   const [loading, setLoading] = useState(true);
 
   const fetchAll = function () {
-    Promise.all([
+    const isAdmin = user?.role === "librarian";
+    const calls = [
       api.get("/loans"),
-      api.get("/books"),
-      api.get("/auth/users"),
-    ])
+      api.get("/books?available=true"),
+    ];
+
+    if (isAdmin) {
+      calls.push(api.get("/auth/users"));
+    }
+
+    Promise.all(calls)
       .then(function (results) {
         setLoans(results[0].data);
-        setBooks(results[1].data.filter((b) => b.availableCopies > 0));
-        setUsers((results[2].data || []).filter((u) => u.role === "student"));
+        setBooks(results[1].data);
+        if (isAdmin && results[2]) {
+          setUsers(results[2].data.filter((u) => u.role === "student"));
+        }
         setLoading(false);
       })
-      .catch(function () {
-        // Si la route users n'existe pas encore, on continue sans
-        Promise.all([api.get("/loans"), api.get("/books")]).then(
-          function (results) {
-            setLoans(results[0].data);
-            setBooks(results[1].data.filter((b) => b.availableCopies > 0));
-            setLoading(false);
-          },
-        );
+      .catch(function (err) {
+        console.error("Fetch all error:", err);
+        setLoading(false);
+        toast.error(t("errorOccurred"));
       });
   };
 
@@ -205,7 +208,7 @@ export default function Loans() {
           <tbody className="divide-y divide-slate-50">
             {loading ? (
               <tr>
-                <td colSpan="5" className="px-6 py-12 text-center">
+                <td colSpan={user?.role === "librarian" ? "5" : "4"} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center gap-2 text-slate-400">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -217,7 +220,7 @@ export default function Loans() {
               </tr>
             ) : loans.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
+                <td colSpan={user?.role === "librarian" ? "5" : "4"} className="px-6 py-12 text-center text-slate-400">
                   {t("noLoans")}
                 </td>
               </tr>
@@ -226,12 +229,12 @@ export default function Loans() {
                 return (
                   <tr key={loan._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-slate-900">{loan.user && loan.user.name}</p>
-                      <p className="text-xs text-slate-500">{loan.user && loan.user.email}</p>
+                      <p className="text-sm font-medium text-slate-900">{loan.user?.name}</p>
+                      <p className="text-xs text-slate-500">{loan.user?.studentId || loan.user?.email}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-slate-900">{loan.book && loan.book.title}</p>
-                      <p className="text-xs text-slate-500">{loan.book && loan.book.author}</p>
+                      <p className="text-sm font-medium text-slate-900">{loan.book?.title}</p>
+                      <p className="text-xs text-slate-500">{loan.book?.author}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 font-mono">
                       {new Date(loan.dueDate).toLocaleDateString("fr-FR")}
@@ -241,32 +244,54 @@ export default function Loans() {
                         {statusLabel(loan.status)}
                       </span>
                     </td>
-                    {user && user.role === "librarian" && (
-                      <td className="px-6 py-4 text-right">
-                        {loan.status === "pending" && (
+
+                    {/* Colonne d'action conditionnelle */}
+                    <td className="px-6 py-4 text-right">
+                      {user?.role === "librarian" ? (
+                        <>
+                          {loan.status === "pending" && (
+                            <button
+                              onClick={function () { setShowScanner(true); }}
+                              className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors font-medium"
+                            >
+                              📷 {t("confirmScan")}
+                            </button>
+                          )}
+                          {(loan.status === "active" || loan.status === "late") && (
+                            <button
+                              onClick={function () { setShowScanner(true); }}
+                              className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors font-medium border border-emerald-100"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                              {t("returnScan")}
+                            </button>
+                          )}
+                          {loan.status === "returned" && (
+                            <span className="text-xs text-slate-300">—</span>
+                          )}
+                        </>
+                      ) : (
+                        loan.status === "pending" && (
                           <button
-                            onClick={function () { setShowScanner(true); }}
-                            className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors font-medium"
+                            onClick={async () => {
+                              try {
+                                const qrRes = await api.get(`/loans/${loan._id}/qrcode`);
+                                const { generateLoanPDF } = await import("../utils/generatePDF");
+                                generateLoanPDF(loan, qrRes.data.qrCode);
+                                toast.success(t("borrowSuccessTitle"));
+                              } catch (err) {
+                                toast.error(t("errorOccurred"));
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-xs bg-sky-50 text-sky-700 px-3 py-1.5 rounded-lg hover:bg-sky-100 transition-colors font-medium border border-sky-100"
                           >
-                            📷 {t("confirmScan")}
+                            📥 PDF
                           </button>
-                        )}
-                        {(loan.status === "active" || loan.status === "late") && (
-                          <button
-                            onClick={function () { setShowScanner(true); }}
-                            className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors font-medium"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            📷 {t("returnScan")}
-                          </button>
-                        )}
-                        {loan.status === "returned" && (
-                          <span className="text-xs text-slate-300">—</span>
-                        )}
-                      </td>
-                    )}
+                        )
+                      )}
+                    </td>
                   </tr>
                 );
               })

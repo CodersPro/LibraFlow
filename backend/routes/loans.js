@@ -1,90 +1,33 @@
-/*const express = require('express');
-const router = express.Router();
-const Loan = require('../models/Loan');
-const Book = require('../models/Book');
-const { protect, librarianOnly } = require('../middleware/auth');
-
-router.get('/', protect, async (req, res) => {
-  try {
-    const filter = req.user.role === 'librarian' ? {} : { user: req.user._id };
-    const loans = await Loan.find(filter)
-      .populate('user', 'name email studentId')
-      .populate('book', 'title author genre')
-      .sort({ createdAt: -1 });
-    const now = new Date();
-    for (const loan of loans) {
-      if (loan.status === 'active' && loan.dueDate < now) {
-        loan.status = 'late';
-        await loan.save();
-      }
-    }
-    res.json(loans);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.post('/', protect, librarianOnly, async (req, res) => {
-  try {
-    const { userId, bookId } = req.body;
-    const book = await Book.findById(bookId);
-    if (!book) return res.status(404).json({ message: 'Livre introuvable' });
-    if (book.availableCopies <= 0) return res.status(400).json({ message: 'Aucune copie disponible' });
-    const existingLoan = await Loan.findOne({ user: userId, book: bookId, status: { $in: ['active', 'late'] } });
-    if (existingLoan) return res.status(400).json({ message: 'Cet étudiant a déjà ce livre' });
-    const loan = await Loan.create({ user: userId, book: bookId });
-    book.availableCopies -= 1;
-    await book.save();
-    await loan.populate('user', 'name email');
-    await loan.populate('book', 'title author');
-    res.status(201).json(loan);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.put('/:id/return', protect, librarianOnly, async (req, res) => {
-  try {
-    const loan = await Loan.findById(req.params.id).populate('book');
-    if (!loan) return res.status(404).json({ message: 'Emprunt introuvable' });
-    if (loan.status === 'returned') return res.status(400).json({ message: 'Livre déjà retourné' });
-    loan.status = 'returned';
-    loan.returnedAt = new Date();
-    await loan.save();
-    await Book.findByIdAndUpdate(loan.book._id, { $inc: { availableCopies: 1 } });
-    res.json(loan);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-module.exports = router;*/
 const express = require("express");
 const router = express.Router();
 const QRCode = require("qrcode");
 const Loan = require("../models/Loan");
 const Book = require("../models/Book");
+const User = require("../models/User");
+const Notification = require("../models/Notification");
 const { protect, librarianOnly } = require("../middleware/auth");
 
 // ── GET /api/loans — Liste des emprunts ──
-// Librarian : tous | Student : les siens uniquement
 router.get("/", protect, async (req, res) => {
   try {
     const filter = req.user.role === "librarian" ? {} : { user: req.user._id };
     const loans = await Loan.find(filter)
       .populate("user", "name email studentId")
       .populate("book", "title author genre")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // Utilise lean() pour plus de rapidité (retourne des objets simples)
 
-    // Mise à jour automatique des retards
+    // On calcule le statut 'late' à la volée s'il n'est pas déjà marqué en base
+    // Cela évite de faire un updateMany (écriture) à chaque chargement (lecture)
     const now = new Date();
-    for (const loan of loans) {
-      if (loan.status === "active" && loan.dueDate < now) {
-        loan.status = "late";
-        await loan.save();
+    const processedLoans = loans.map(loan => {
+      if (loan.status === "active" && new Date(loan.dueDate) < now) {
+        return { ...loan, status: "late" };
       }
-    }
-    res.json(loans);
+      return loan;
+    });
+
+    res.json(processedLoans);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -108,8 +51,11 @@ router.get("/:id", protect, async (req, res) => {
 // La décrémentation se fait à la confirmation (PUT /:id/confirm)
 router.post("/", protect, async (req, res) => {
   try {
-    const { bookId } = req.body;
-    const userId = req.user._id; // toujours l'utilisateur connecté
+    const { bookId, userId } = req.body;
+    const isLibrarian = req.user.role === "librarian";
+
+    // If librarian provides userId, use it. Otherwise use logged in user.
+    const targetUserId = (isLibrarian && userId) ? userId : req.user._id;
 
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ message: "Livre introuvable" });
@@ -118,16 +64,31 @@ router.post("/", protect, async (req, res) => {
 
     // Vérifier qu'il n'a pas déjà ce livre en cours
     const existingLoan = await Loan.findOne({
-      user: userId,
+      user: targetUserId,
       book: bookId,
       status: { $in: ["pending", "active", "late"] },
     });
     if (existingLoan)
       return res
         .status(400)
-        .json({ message: "Vous avez déjà une demande pour ce livre" });
+        .json({ message: isLibrarian ? "Cet étudiant a déjà une demande ou un emprunt en cours pour ce livre" : "Vous avez déjà une demande pour ce livre" });
 
-    const loan = await Loan.create({ user: userId, book: bookId });
+    // If created by librarian, it's active immediately and copies are decremented
+    const status = isLibrarian ? "active" : "pending";
+    const borrowedAt = isLibrarian ? new Date() : undefined;
+
+    const loan = await Loan.create({
+      user: targetUserId,
+      book: bookId,
+      status,
+      borrowedAt
+    });
+
+    if (isLibrarian) {
+      book.availableCopies -= 1;
+      await book.save();
+    }
+
     await loan.populate("user", "name email");
     await loan.populate("book", "title author genre");
 
@@ -190,6 +151,21 @@ router.put("/:id/confirm", protect, librarianOnly, async (req, res) => {
     book.availableCopies -= 1;
     await book.save();
 
+    // Notification Temps Réel via Socket.io
+    req.io.to(loan.user._id.toString()).emit("notification", {
+      title: "Emprunt confirmé ! 📖",
+      message: `Ton emprunt pour "${loan.book.title}" est prêt !`,
+      type: "success"
+    });
+
+    // Sauvegarder en base aussi
+    await Notification.create({
+      user: loan.user._id,
+      title: "Emprunt confirmé ! 📖",
+      message: `Ton emprunt pour "${loan.book.title}" est prêt !`,
+      type: "success"
+    });
+
     res.json(loan);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -216,6 +192,48 @@ router.put("/:id/return", protect, librarianOnly, async (req, res) => {
     loan.status = "returned";
     loan.returnedAt = new Date();
     await loan.save();
+
+    // Créditer des points à l'étudiant
+    const student = await User.findById(loan.user._id);
+    if (student) {
+      student.points += 10;
+
+      // Vérification des badges (exemple simple)
+      const loanCount = await Loan.countDocuments({ user: student._id, status: "returned" });
+      if (loanCount === 5 && !student.badges.some(b => b.name === "Lecteur Assidu")) {
+        student.badges.push({ name: "Lecteur Assidu", icon: "📚" });
+
+        // Notification Badge via Socket.io
+        req.io.to(student._id.toString()).emit("notification", {
+          title: "Nouveau Badge ! 🏆",
+          message: "Tu as débloqué le badge 'Lecteur Assidu' !",
+          type: "badge"
+        });
+
+        await Notification.create({
+          user: student._id,
+          title: "Nouveau Badge ! 🏆",
+          message: "Tu as débloqué le badge 'Lecteur Assidu' !",
+          type: "badge"
+        });
+      }
+
+      await student.save();
+
+      // Notification Points via Socket.io
+      req.io.to(student._id.toString()).emit("notification", {
+        title: "Points gagnés ! ✨",
+        message: `+10 points pour avoir rendu "${loan.book.title}".`,
+        type: "success"
+      });
+
+      await Notification.create({
+        user: student._id,
+        title: "Points gagnés ! ✨",
+        message: `+10 points pour avoir rendu "${loan.book.title}".`,
+        type: "success"
+      });
+    }
 
     await Book.findByIdAndUpdate(loan.book._id, {
       $inc: { availableCopies: 1 },

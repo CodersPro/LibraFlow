@@ -12,6 +12,10 @@ const translations = {
     about: "À propos",
     features: "Fonctionnalités",
     contact: "Contact",
+    myScore: "Mon Score",
+    unlockedBadges: "Badges débloqués",
+    noBadges: "Aucun badge pour le moment",
+    profile: "Profil",
 
     // Landing Page
     intelligentSystem: "Système de gestion intelligent",
@@ -102,7 +106,7 @@ const translations = {
     // AI
     artificialIntelligence: "Intelligence Artificielle",
     geminiAI: "BookAI",
-    poweredBy: "Assistant intelligent propulsé par Groq AI",
+    poweredBy: "Assistant intelligent LibraFlow",
     chat: "Chat",
     recommendations: "Recommandations",
     summary: "Résumé",
@@ -122,7 +126,7 @@ const translations = {
     libraryAnalysis: "BookAI analyse l'état de votre bibliothèque",
     analyzeLibrary: "Analyser la bibliothèque",
     clickToGenerate: "Cliquez sur le bouton pour générer vos recommandations",
-    aiIntro: "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
+    aiIntro: "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
     clearHistory: "Effacer la conversation",
     online: "En ligne",
     clear: "Effacer",
@@ -140,6 +144,12 @@ const translations = {
     fullName: "Nom complet",
     processing: "Traitement...",
     backToHome: "Retour à l'accueil",
+    welcome: "Bienvenue,",
+    admin: "Administrateur",
+    iamStudent: "Je suis Étudiant",
+    iamAdmin: "Je suis Administrateur",
+    studentLogin: "Espace Étudiant",
+    adminLogin: "Espace Admin",
 
     // Common
     book: "Livre",
@@ -163,6 +173,10 @@ const translations = {
     about: "About",
     features: "Features",
     contact: "Contact",
+    myScore: "My Score",
+    unlockedBadges: "Unlocked Badges",
+    noBadges: "No badges yet",
+    profile: "Profile",
 
     // Landing Page
     intelligentSystem: "Intelligent Management System",
@@ -253,7 +267,7 @@ const translations = {
     // AI
     artificialIntelligence: "Artificial Intelligence",
     geminiAI: "BookAI",
-    poweredBy: "Smart assistant powered by Groq AI",
+    poweredBy: "LibraFlow intelligent assistant",
     chat: "Chat",
     recommendations: "Recommendations",
     summary: "Summary",
@@ -273,7 +287,7 @@ const translations = {
     libraryAnalysis: "BookAI analyzes your library status",
     analyzeLibrary: "Analyze Library",
     clickToGenerate: "Click the button to generate your recommendations",
-    aiIntro: "Hello! I am your LibraFlow librarian assistant powered by Groq AI. Ask me your questions about books, request recommendations or discuss literature!",
+    aiIntro: "Hello! I am your LibraFlow librarian assistant. Ask me your questions about books, request recommendations or discuss literature!",
     clearHistory: "Clear conversation",
     online: "Online",
     clear: "Clear",
@@ -291,6 +305,12 @@ const translations = {
     fullName: "Full Name",
     processing: "Processing...",
     backToHome: "Back to Home",
+    welcome: "Welcome,",
+    admin: "Administrator",
+    iamStudent: "I am a Student",
+    iamAdmin: "I am an Admin",
+    studentLogin: "Student Lounge",
+    adminLogin: "Admin Portal",
 
     // Common
     book: "Book",

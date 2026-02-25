@@ -6,7 +6,13 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: [true, "L'email est obligatoire"], unique: true, lowercase: true, trim: true },
   password: { type: String, required: [true, 'Le mot de passe est obligatoire'], minlength: 6, select: false },
   role: { type: String, enum: ['student', 'librarian'], default: 'student' },
-  studentId: { type: String, trim: true }
+  studentId: { type: String, trim: true },
+  points: { type: Number, default: 0 },
+  badges: [{
+    name: String,
+    icon: String,
+    unlockedAt: { type: Date, default: Date.now }
+  }]
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
