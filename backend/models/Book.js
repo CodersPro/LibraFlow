@@ -51,4 +51,7 @@ bookSchema.virtual("isAvailable").get(function () {
 
 bookSchema.set("toJSON", { virtuals: true });
 
+bookSchema.index({ title: "text", author: "text" });
+bookSchema.index({ genre: 1 });
+
 module.exports = mongoose.model("Book", bookSchema);

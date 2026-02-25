@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ToastProvider } from "./hooks/Toast";
+import { SocketProvider } from "./context/SocketContext";
 import Layout from "./components/Layout";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
@@ -21,33 +22,35 @@ export default function App() {
     <LanguageProvider>
       <AuthProvider>
         <ToastProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+          <SocketProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-              {/* Private Routes Wrapper */}
-              <Route
-                path="/app"
-                element={
-                  <PrivateRoute>
-                    <Layout />
-                  </PrivateRoute>
-                }
-              >
-                <Route index element={<Navigate to="/app/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="catalogue" element={<Catalogue />} />
-                <Route path="loans" element={<Loans />} />
-                <Route path="ai" element={<AI />} />
-              </Route>
+                {/* Private Routes Wrapper */}
+                <Route
+                  path="/app"
+                  element={
+                    <PrivateRoute>
+                      <Layout />
+                    </PrivateRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/app/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="catalogue" element={<Catalogue />} />
+                  <Route path="loans" element={<Loans />} />
+                  <Route path="ai" element={<AI />} />
+                </Route>
 
-              {/* Catch-all redirect to Landing */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
+                {/* Catch-all redirect to Landing */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </SocketProvider>
         </ToastProvider>
       </AuthProvider>
     </LanguageProvider>

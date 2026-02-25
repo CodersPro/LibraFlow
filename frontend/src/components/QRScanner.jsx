@@ -16,35 +16,74 @@ export default function QRScanner({ onClose, onSuccess }) {
   const [actionDone, setActionDone] = useState(false);
 
   // ── Démarrer la caméra ──
+  const startCamera = async () => {
+    if (mode !== "camera" || actionDone) return;
+    setError("");
+    setScanning(false);
+
+    try {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isSecure = window.isSecureContext || isLocalhost;
+
+      if (!isSecure && window.location.protocol !== 'https:') {
+        console.warn("Insecure context detected");
+      }
+
+      // Tentative de démarrage avec la caméra arrière, sinon n'importe laquelle (cas des PC)
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 24, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.65, height: Math.min(w, h) * 0.65 }) },
+          (decodedText) => {
+            html5QrCode.stop().catch(() => { });
+            setScanning(false);
+            handleQRResult(decodedText);
+          },
+          () => { }
+        );
+      } catch (backErr) {
+        console.warn("Mode environment échoué, essai caméra par défaut...", backErr);
+        await html5QrCode.start(
+          undefined, // Utilise la caméra par défaut
+          { fps: 24, qrbox: (w, h) => ({ width: Math.min(w, h) * 0.65, height: Math.min(w, h) * 0.65 }) },
+          (decodedText) => {
+            html5QrCode.stop().catch(() => { });
+            setScanning(false);
+            handleQRResult(decodedText);
+          },
+          () => { }
+        );
+      }
+
+      setScanning(true);
+    } catch (err) {
+      console.error("Camera Start Error:", err);
+      let msg = "Erreur caméra. ";
+      if (!window.isSecureContext && !isLocalhost) {
+        msg += "Le navigateur bloque la caméra sur IP non-sécurisée. Utilisez http://localhost:5173 sur PC ou l'astuce chrome://flags sur mobile.";
+      } else {
+        msg += "Vérifiez que vous avez autorisé l'accès à la caméra dans les paramètres du navigateur.";
+      }
+      setError(msg);
+    }
+  };
+
   useEffect(() => {
-    if (mode !== "camera") return;
-
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    scannerRef.current = html5QrCode;
-
-    html5QrCode
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          html5QrCode.stop().catch(() => {});
-          setScanning(false);
-          handleQRResult(decodedText);
-        },
-        () => {}, // erreur silencieuse (pas de QR détecté)
-      )
-      .then(() => setScanning(true))
-      .catch((err) => {
-        setError("Impossible d'accéder à la caméra : " + err);
-      });
-
+    const timer = setTimeout(startCamera, 800);
     return () => {
-      html5QrCode.stop().catch(() => {});
+      clearTimeout(timer);
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(() => { });
+      }
     };
-  }, [mode]);
+  }, [mode, actionDone]);
 
   // ── Traiter le résultat QR (caméra ou manuel) ──
   const handleQRResult = async (raw) => {
+    if (!raw) return;
     setError("");
     setLoanData(null);
     setLoading(true);
@@ -145,11 +184,10 @@ export default function QRScanner({ onClose, onSuccess }) {
               setError("");
               setActionDone(false);
             }}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === "camera"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === "camera"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+              }`}
           >
             📷 Caméra
           </button>
@@ -160,11 +198,10 @@ export default function QRScanner({ onClose, onSuccess }) {
               setError("");
               setActionDone(false);
             }}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === "manual"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === "manual"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+              }`}
           >
             ⌨️ Saisie manuelle
           </button>
@@ -173,19 +210,38 @@ export default function QRScanner({ onClose, onSuccess }) {
         <div className="p-6 space-y-4">
           {/* ── MODE CAMÉRA ── */}
           {mode === "camera" && !loanData && !actionDone && (
-            <div>
+            <div className="relative">
               <div
                 id="qr-reader"
-                className="rounded-xl overflow-hidden border-2 border-slate-200"
-                style={{ width: "100%" }}
+                className="rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-900"
+                style={{ width: "100%", minHeight: "300px" }}
               />
+              {!scanning && !error && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-white text-xs flex flex-col items-center gap-2">
+                    <svg className="animate-spin h-6 w-6 text-sky-400" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Initialisation de la caméra...
+                  </div>
+                </div>
+              )}
               {scanning && (
                 <p className="text-center text-xs text-slate-400 mt-2 animate-pulse">
                   Pointez la caméra vers le QR code...
                 </p>
               )}
               {error && (
-                <p className="text-center text-xs text-red-500 mt-2">{error}</p>
+                <div className="mt-4 space-y-3">
+                  <p className="text-center text-xs text-red-500">{error}</p>
+                  <button
+                    onClick={startCamera}
+                    className="w-full py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
+                  >
+                    🔄 Réessayer d'allumer la caméra
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -329,9 +385,7 @@ export default function QRScanner({ onClose, onSuccess }) {
                 Opération réussie !
               </p>
               <p className="text-sm text-slate-500">
-                {onSuccess === "returned"
-                  ? "Le retour a été enregistré et le reçu PDF a été téléchargé."
-                  : "L'emprunt a été confirmé. Le livre est maintenant sorti."}
+                L'opération a été enregistrée avec succès.
               </p>
               <button
                 onClick={() => {

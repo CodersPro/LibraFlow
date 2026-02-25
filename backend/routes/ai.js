@@ -162,13 +162,22 @@ const Book = require("../models/Book");
 const Loan = require("../models/Loan");
 const { protect } = require("../middleware/auth");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// instantiate Groq only when the key is available
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+} else {
+  console.warn("⚠️  GROQ_API_KEY not set; AI endpoints will use fallback responses.");
+}
 
 // ── Modèle utilisé ──
 const MODEL = "llama-3.3-70b-versatile";
 
 // ── Helper : appel Groq simplifié ──
 const askGroq = async (prompt) => {
+  if (!groq) {
+    throw new Error("Groq client not configured");
+  }
   const response = await groq.chat.completions.create({
     model: MODEL,
     messages: [{ role: "user", content: prompt }],

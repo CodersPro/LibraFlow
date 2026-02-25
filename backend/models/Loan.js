@@ -59,4 +59,8 @@ loanSchema.virtual("isLate").get(function () {
 
 loanSchema.set("toJSON", { virtuals: true });
 
+loanSchema.index({ user: 1 });
+loanSchema.index({ book: 1 });
+loanSchema.index({ status: 1 });
+
 module.exports = mongoose.model("Loan", loanSchema);

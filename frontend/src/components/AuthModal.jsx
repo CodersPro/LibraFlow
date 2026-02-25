@@ -3,14 +3,16 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useToast } from "../hooks/useToast";
+import logo from "../assets/logo_LibraFlow.png";
 
 export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
-  const [form, setForm] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    role: "student" 
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "student",
+    studentId: ""
   });
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -24,12 +26,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
     setLoading(true);
     try {
       const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
-      const payload = mode === "login" 
+      const payload = mode === "login"
         ? { email: form.email, password: form.password }
         : form;
 
       const { data } = await api.post(endpoint, payload);
-      
+
       if (mode === "register") {
         toast.success(t("registrationSuccess") || "Inscription réussie ! Vous pouvez maintenant vous connecter.");
         setMode("login");
@@ -39,7 +41,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
         onClose();
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Une erreur est survenue");
+      toast.error(err.response?.data?.message || t("errorOccurred") || "Une erreur est survenue");
     } finally {
       setLoading(false);
     }
@@ -48,59 +50,99 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
-      
+
       {/* Modal Content */}
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-zoom-in">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors z-20"
+        >
+          ×
+        </button>
+
+        {/* Logo in Modal */}
+        <div className="pt-8 flex flex-col items-center">
+          <img src={logo} alt="LibraFlow Logo" className="h-10 w-auto mb-2" />
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">LibraFlow</h2>
+        </div>
+
         {/* Header with tabs */}
-        <div className="flex border-b border-slate-100">
+        <div className="flex border-b border-slate-100 mt-4">
           <button
             onClick={() => setMode("login")}
-            className={`flex-1 py-5 text-sm font-semibold transition-all ${
-              mode === "login" ? "text-sky-600 border-b-2 border-sky-600 bg-sky-50/30" : "text-slate-400 hover:text-slate-600"
-            }`}
+            className={`flex-1 py-4 text-sm font-semibold transition-all ${mode === "login" ? "text-sky-600 border-b-2 border-sky-600 bg-sky-50/50" : "text-slate-400 hover:text-slate-600"
+              }`}
           >
             {t("login")}
           </button>
           <button
             onClick={() => setMode("register")}
-            className={`flex-1 py-5 text-sm font-semibold transition-all ${
-              mode === "register" ? "text-sky-600 border-b-2 border-sky-600 bg-sky-50/30" : "text-slate-400 hover:text-slate-600"
-            }`}
+            className={`flex-1 py-4 text-sm font-semibold transition-all ${mode === "register" ? "text-sky-600 border-b-2 border-sky-600 bg-sky-50/50" : "text-slate-400 hover:text-slate-600"
+              }`}
           >
             {t("register") || "S'inscrire"}
           </button>
         </div>
 
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors z-10"
-        >
-          ×
-        </button>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="p-8 space-y-4">
           {mode === "register" && (
-            <div className="animate-slide-down">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                {t("name") || "Nom complet"}
-              </label>
-              <input
-                type="text"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
-                placeholder="Jean Dupont"
-              />
-            </div>
+            <>
+              {/* Role Selection */}
+              <div className="flex p-1 bg-slate-100 rounded-xl mb-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "student" })}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${form.role === "student" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500"}`}
+                >
+                  {t("student")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "librarian" })}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${form.role === "librarian" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500"}`}
+                >
+                  {t("admin")}
+                </button>
+              </div>
+
+              <div className="animate-slide-down">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                  {t("fullName") || "Nom complet"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                  placeholder="Jean Dupont"
+                />
+              </div>
+
+              {form.role === "student" && (
+                <div className="animate-fade-in">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    ID Étudiant (BIT-XXX)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={form.studentId}
+                    onChange={(e) => setForm({ ...form, studentId: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                    placeholder="BIT-2024-001"
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
               {t("email")}
             </label>
             <input
@@ -108,13 +150,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
               placeholder="votre@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
               {t("password")}
             </label>
             <input
@@ -122,7 +164,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
               required
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none transition-all focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
               placeholder="••••••••"
             />
           </div>
@@ -130,7 +172,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-2xl py-4 text-sm font-bold hover:shadow-lg hover:shadow-sky-200 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 mt-2"
+            className={`w-full bg-gradient-to-r ${form.role === 'librarian' && mode === 'register' ? 'from-indigo-600 to-violet-700' : 'from-sky-500 to-indigo-600'} text-white rounded-2xl py-4 text-sm font-bold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 mt-4 shadow-md shadow-sky-100`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -145,11 +187,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
             )}
           </button>
         </form>
-        
+
         <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
-           <p className="text-xs text-slate-400">
-             LibraFlow &copy; 2024 &bull; Smart Library Management
-           </p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+            LibraFlow &bull; Smart Library Management
+          </p>
         </div>
       </div>
     </div>

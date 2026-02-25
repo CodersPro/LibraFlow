@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/useToast";
+import logo from "../assets/logo_LibraFlow.png";
 
 
 
@@ -15,7 +16,7 @@ export default function AI() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
+      text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
     },
   ]);
   const [input, setInput] = useState("");
@@ -37,7 +38,7 @@ export default function AI() {
   const STORAGE_KEY = `libraflow_ai_history_${user?._id}`;
   const INITIAL_MESSAGE = {
     role: "assistant",
-    text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow propulsé par Groq AI. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
+    text: t("aiIntro") || "Bonjour ! Je suis votre assistant bibliothécaire LibraFlow. Posez-moi vos questions sur des livres, demandez des recommandations ou discutez de littérature !",
   };
 
   // Charger l'historique au démarrage
@@ -175,9 +176,6 @@ export default function AI() {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">
-          {t("artificialIntelligence")}
-        </p>
         <h2 className="text-3xl font-bold text-slate-900">{t("geminiAI")}</h2>
         <p className="text-slate-500 text-sm mt-1">{t("poweredBy")}</p>
       </div>
@@ -212,13 +210,13 @@ export default function AI() {
         >
           {/* Chat Header */}
           <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
-              <span className="text-white font-bold">L</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src={logo} alt="Logo" className="w-full h-auto" />
             </div>
             <div>
               <h3 className="text-slate-900 font-semibold">LibraFlow AI</h3>
               <p className="text-xs text-slate-500">
-                Propulsé par Groq · llama-3.3-70b
+                Assistant Virtuel
               </p>
             </div>
             <div className="ml-auto flex items-center gap-2">
@@ -248,8 +246,8 @@ export default function AI() {
                   }
                 >
                   {msg.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm mr-2 flex-shrink-0">
-                      B
+                    <div className="w-8 h-8 flex items-center justify-center text-white font-bold text-sm mr-2 flex-shrink-0">
+                      <img src={logo} alt="A" className="w-full h-auto" />
                     </div>
                   )}
                   <div
@@ -267,8 +265,8 @@ export default function AI() {
             })}
             {loadingChat && (
               <div className="flex justify-start">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm mr-2 flex-shrink-0">
-                  B
+                <div className="w-8 h-8 flex items-center justify-center text-white font-bold text-sm mr-2 flex-shrink-0">
+                  <img src={logo} alt="A" className="w-full h-auto" />
                 </div>
                 <div className="bg-slate-100 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center">
                   <span
